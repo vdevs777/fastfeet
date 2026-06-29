@@ -6,6 +6,7 @@ import { HashComparer } from "../cryptography/hash-comparer";
 import { Encrypter } from "../cryptography/encrypter";
 
 import { WrongCredentialsError } from "./errors/wrong-credentials-error";
+import { CPF } from "../../enterprise/entities/value-objects/cpf";
 
 interface AuthenticateUserUseCaseRequest {
   cpf: string;
@@ -31,7 +32,15 @@ export class AuthenticateUserUseCase {
     cpf,
     password,
   }: AuthenticateUserUseCaseRequest): Promise<AuthenticateUserUseCaseResponse> {
-    const user = await this.usersRepository.findByCpf(cpf);
+    let cpfVO: CPF;
+
+    try {
+      cpfVO = CPF.create(cpf);
+    } catch {
+      return left(new WrongCredentialsError());
+    }
+
+    const user = await this.usersRepository.findByCpf(cpfVO.value);
 
     if (!user) {
       return left(new WrongCredentialsError());
